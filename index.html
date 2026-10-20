@@ -1537,6 +1537,7 @@ const KIND_LEGEND = {
 
 let sched = null, previewSched = null;
 let playing = false, startTime = 0, lastStep = -1, rafId = 0, eggPtr = 0;
+let notePtr = 0, schedTimer = 0;          /* lookahead 分块排程：长代码不卡主线程 */
 let lastLegend = null, stopToken = 0, previewTimer = 0, resizeTimer = 0;
 let parts = [], lastDraw = 0, vinylAng = 0;
 
@@ -1824,6 +1825,16 @@ function stepAt(rel){
 }
 
 /* ── 播放 / 停止 ── */
+/* 前瞻式排程：任意时刻只把未来 1.5s 内的音符交给 Web Audio。
+   长代码（数千音符）不会一次性创建几万个节点卡死主线程，
+   setInterval 在后台标签页被节流到 1Hz 时仍能靠 1.5s 窗口续上。 */
+function scheduleAhead(){
+  if(!playing || !sched) return;
+  const ahead = ctx.currentTime + 1.5;
+  const ns = sched.notes;
+  while(notePtr < ns.length && ns[notePtr].t < ahead){ fire(ns[notePtr]); notePtr++; }
+}
+
 function play(){
   if(playing) return;
   currentLang = detectLang(codeEl.value);
@@ -1841,7 +1852,10 @@ function play(){
   for(const n of s.notes) n.t += off;
 
   active = [];                              /* 丢掉上一轮残留节点引用 */
-  for(const n of s.notes) fire(n);          /* 全曲一次性排程，采样级精准 */
+  notePtr = 0;
+  clearInterval(schedTimer);
+  scheduleAhead();                          /* 立即排首批，避免开头空白 */
+  schedTimer = setInterval(scheduleAhead, 80);
 
   startTime = base;
   lastStep = -1; eggPtr = 0;
@@ -1895,6 +1909,7 @@ function tick(){
 function finish(){
   playing = false;
   cancelAnimationFrame(rafId); rafId = 0;
+  clearInterval(schedTimer); schedTimer = 0;
   btnPlay.disabled = false; btnStop.disabled = true;
   hudBadge.textContent = 'DONE'; hudBadge.style.color = '#b6ff00';
   hudText.textContent = '编译完成 · ' + sched.total + ' 步 / ' + sched.notes.length + ' 音符';
@@ -1908,6 +1923,7 @@ function stop(){
   const wasPlaying = playing;
   playing = false;
   cancelAnimationFrame(rafId); rafId = 0;
+  clearInterval(schedTimer); schedTimer = 0;
 
   if(ctx && nodes && wasPlaying){
     const t = ctx.currentTime;
