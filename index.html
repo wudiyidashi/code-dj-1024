@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODE DJ 1024 · 代码重金属与电音合成器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05060a;
+  --panel:rgba(16,19,30,.72);
+  --line:rgba(0,229,255,.16);
+  --cyan:#00e5ff;
+  --magenta:#ff2d95;
+  --violet:#7c6bff;
+  --lime:#b6ff00;
+  --amber:#ffb320;
+  --text:#d8e2f0;
+  --dim:#6b7893;
+  --lh:24px;
+  --fs:13.5px;
+  --mono:"Share Tech Mono",ui-monospace,SFMono-Regular,Consolas,"Cascadia Mono",Menlo,monospace;
+  --disp:"Orbitron",system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:var(--disp);color:var(--text);
+  background:
+    radial-gradient(1100px 700px at 10% -12%, rgba(255,45,149,.17), transparent 62%),
+    radial-gradient(950px 620px at 92% 6%, rgba(0,229,255,.14), transparent 62%),
+    radial-gradient(800px 560px at 50% 118%, rgba(124,107,255,.14), transparent 62%),
+    var(--bg);
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 1px, transparent 1px 3px);
+  mix-blend-mode:overlay;
+}
+body::after{
+  content:"";position:fixed;left:0;right:0;height:180px;top:-200px;pointer-events:none;z-index:10;
+  background:linear-gradient(180deg,transparent,rgba(0,229,255,.055),transparent);
+  animation:sweep 7.5s linear infinite;
+}
+@keyframes sweep{0%{transform:translateY(0)}100%{transform:translateY(140vh)}}
+
+.app{max-width:1580px;margin:0 auto;padding:18px 20px 34px;position:relative;z-index:1}
+
+.topbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:6px 2px 18px}
+.brand{display:flex;align-items:center;gap:14px;min-width:300px}
+.logo{
+  width:52px;height:52px;flex:0 0 52px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(145deg,rgba(255,45,149,.9),rgba(124,107,255,.85));
+  box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 0 26px rgba(255,45,149,.5);
+  font-size:24px;line-height:1;color:#fff;animation:pulseLogo 2.4s ease-in-out infinite;
+}
+@keyframes pulseLogo{50%{box-shadow:0 0 0 1px rgba(255,255,255,.16) inset,0 0 40px rgba(0,229,255,.55)}}
+.brand h1{
+  margin:0;font-size:26px;letter-spacing:.12em;font-weight:900;white-space:nowrap;
+  background:linear-gradient(92deg,var(--cyan),#fff 38%,var(--magenta) 78%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 12px rgba(0,229,255,.35));
+}
+.brand h1 .sl{color:var(--magenta);-webkit-text-fill-color:var(--magenta);opacity:.85}
+.brand p{margin:3px 0 0;font-size:11px;letter-spacing:.2em;color:var(--dim);font-family:var(--mono)}
+
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto}
+.btn{
+  font-family:var(--disp);font-weight:700;letter-spacing:.1em;font-size:13px;cursor:pointer;
+  border-radius:10px;padding:11px 18px;border:1px solid rgba(0,229,255,.35);
+  background:linear-gradient(180deg,rgba(0,229,255,.14),rgba(0,229,255,.04));
+  color:#eafcff;transition:.16s;white-space:nowrap;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(0,229,255,.35);border-color:rgba(0,229,255,.7)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.34;cursor:not-allowed;transform:none;box-shadow:none}
+.btn.primary{border-color:rgba(255,45,149,.5);background:linear-gradient(180deg,rgba(255,45,149,.26),rgba(124,107,255,.14))}
+.btn.primary:hover{box-shadow:0 0 26px rgba(255,45,149,.45);border-color:rgba(255,45,149,.85)}
+.btn.ghost{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.04);font-size:11.5px;padding:9px 12px;letter-spacing:.04em}
+
+.knob{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.knob label{font-size:10.5px;letter-spacing:.14em;color:var(--dim);font-family:var(--mono)}
+.knob output{font-family:var(--mono);font-size:12px;color:var(--cyan);min-width:34px;text-align:right}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:92px;height:4px;border-radius:3px;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.8);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--cyan);cursor:pointer}
+
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03)}
+.seg button{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:9px 12px;border:0;cursor:pointer;
+  background:transparent;color:#8494b0;transition:.16s;white-space:nowrap}
+.seg button.on{background:linear-gradient(180deg,rgba(0,229,255,.24),rgba(124,107,255,.14));color:#eafcff;text-shadow:0 0 10px rgba(0,229,255,.6)}
+.seg button.on.metal{background:linear-gradient(180deg,rgba(255,45,149,.34),rgba(255,179,32,.18));color:#fff;text-shadow:0 0 12px rgba(255,45,149,.75)}
+
+.stage{display:grid;grid-template-columns:minmax(0,1.26fr) minmax(0,1fr);gap:14px;min-height:calc(100vh - 172px)}
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+  backdrop-filter:blur(9px);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.panel::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:14px;z-index:3;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),transparent 34%)}
+.panel-head{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);
+  font-size:11px;letter-spacing:.2em;color:var(--dim);font-family:var(--mono);flex-wrap:wrap}
+.panel-head .title{color:var(--cyan);text-shadow:0 0 12px rgba(0,229,255,.5)}
+.panel-head .spacer{margin-left:auto}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#9fb0cc;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;white-space:nowrap}
+
+.editor-wrap{flex:1;min-height:320px;position:relative;background:#07080e}
+.editor{position:absolute;inset:0;overflow:hidden}
+.gutter{position:absolute;left:0;top:0;bottom:0;width:54px;overflow:hidden;z-index:1;
+  background:linear-gradient(90deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  border-right:1px solid rgba(255,255,255,.06)}
+.gutter-inner{padding-top:14px;will-change:transform}
+.gutter .g{height:var(--lh);line-height:var(--lh);text-align:right;padding-right:12px;
+  font-family:var(--mono);font-size:12px;color:#3f4a5e;user-select:none}
+.gutter .g.hot{color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.7)}
+.hl,.editor textarea{
+  position:absolute;inset:0;margin:0;border:0;
+  font-family:var(--mono);font-size:var(--fs);line-height:var(--lh);font-weight:400;letter-spacing:0;
+  tab-size:4;-moz-tab-size:4;padding:14px 18px 60px 66px;white-space:pre;word-wrap:normal;
+}
+.hl{overflow:hidden;z-index:0;pointer-events:none;color:#7d8aa3}
+.hl .line{width:max-content;min-width:100%;display:block;padding-right:24px}
+.hl .line.active{background:linear-gradient(90deg,rgba(0,229,255,.19),rgba(255,45,149,.13) 55%,transparent);
+  box-shadow:inset 2px 0 0 var(--cyan)}
+.hl .line.active.ok{box-shadow:inset 2px 0 0 var(--lime);
+  background:linear-gradient(90deg,rgba(182,255,0,.17),rgba(0,229,255,.1) 55%,transparent)}
+.editor textarea{overflow:auto;background:transparent;color:transparent;caret-color:var(--cyan);
+  resize:none;outline:none;z-index:2;scrollbar-width:none}
+.editor textarea::-webkit-scrollbar{width:0;height:0;display:none}
+.editor textarea::selection{background:rgba(0,229,255,.22)}
+
+/* 逐字符霓虹游标 */
+.cursor{position:absolute;top:0;left:0;width:0;height:0;border-radius:3px;pointer-events:none;z-index:4;
+  background:rgba(0,229,255,.30);border:1px solid rgba(255,255,255,.85);opacity:0;
+  box-shadow:0 0 14px rgba(0,229,255,.95),0 0 34px rgba(255,45,149,.55);
+  transition:transform .05s linear,width .05s linear,opacity .1s linear}
+.cursor.on{opacity:1}
+.cursor.metal{background:rgba(255,45,149,.34);border-color:rgba(255,230,180,.95);
+  box-shadow:0 0 16px rgba(255,45,149,.95),0 0 38px rgba(255,179,32,.6)}
+
+.tk-com{color:#4d5c74;font-style:italic}
+.tk-str{color:#8bd67a}
+.tk-num{color:var(--amber)}
+.tk-kw{color:var(--cyan)}
+.tk-pre{color:var(--violet)}
+.tk-id{color:#9db4d4}
+
+.right{display:flex;flex-direction:column;gap:14px;min-height:0}
+.viz-panel{flex:1;min-height:0}
+.scope-wrap{position:relative;flex:0 0 auto;height:92px;border-bottom:1px solid rgba(255,255,255,.06);
+  background:radial-gradient(120% 150% at 50% 130%, rgba(0,229,255,.10), transparent 72%),#06080e}
+#scope{position:absolute;inset:0;width:100%;height:100%;display:block}
+.viz-wrap{flex:1;position:relative;min-height:132px;background:radial-gradient(120% 150% at 50% 130%, rgba(124,107,255,.10), transparent 72%),#06080e}
+#viz{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;margin-left:auto;min-width:0}
+.hud-badge{padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.1em;font-size:10.5px;flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.14);color:#9fb0cc;background:rgba(255,255,255,.05);transition:.15s}
+.hud-text{color:#8f9db8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:270px}
+
+.struct-head{display:flex;align-items:center;gap:10px;padding:7px 14px 4px;
+  font-size:10px;letter-spacing:.18em;color:var(--dim);font-family:var(--mono);
+  border-top:1px solid rgba(255,255,255,.06)}
+.struct-head .title{color:var(--violet)}
+.struct-head .spacer{margin-left:auto}
+.struct-head .pill{font-size:10px;padding:2px 8px}
+.struct-wrap{position:relative;height:80px;padding:0 14px 8px}
+#struct{width:100%;height:100%;display:block;border-radius:6px;background:rgba(6,8,14,.85)}
+.progress{height:3px;background:rgba(255,255,255,.07);position:relative;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  box-shadow:0 0 14px rgba(255,45,149,.7);transition:width .08s linear}
+
+.legend-panel{flex:0 0 auto;max-height:34vh}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.05);
+  overflow:auto;scrollbar-width:thin}
+.lrow{display:flex;align-items:center;gap:9px;padding:6px 12px;background:rgba(10,12,20,.72);transition:.18s;min-width:0}
+.lrow .dot{width:7px;height:7px;border-radius:50%;background:#39445c;flex:0 0 7px;transition:.18s}
+.lrow code{font-family:var(--mono);font-size:11.5px;color:#cfe6f5;background:rgba(255,255,255,.055);
+  padding:1px 6px;border-radius:5px;white-space:nowrap;flex:0 0 auto}
+.lrow .inst{font-size:10px;letter-spacing:.02em;color:#8b98b2;font-family:var(--mono);margin-left:auto;
+  text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow.on{background:linear-gradient(90deg,rgba(0,229,255,.16),rgba(255,45,149,.07))}
+.lrow.on .dot{background:var(--cyan);box-shadow:0 0 12px var(--cyan);transform:scale(1.4)}
+.lrow.on .inst{color:#eafcff}
+
+.hint{padding:9px 14px;font-family:var(--mono);font-size:10.5px;color:#55617a;letter-spacing:.03em;line-height:1.6;
+  border-top:1px solid rgba(255,255,255,.06)}
+.hint b{color:#93a2bd;font-weight:400}
+kbd{font-family:var(--mono);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:4px;padding:1px 5px;font-size:10px;color:#c7d4e8}
+#toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:rgba(10,14,22,.94);border:1px solid var(--line);color:#e6f2ff;padding:11px 20px;border-radius:10px;
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;transition:.24s;z-index:50;
+  box-shadow:0 12px 40px rgba(0,0,0,.6)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#egg{position:fixed;inset:0;pointer-events:none;z-index:45;opacity:0;transition:opacity .28s;
+  background:radial-gradient(circle at 50% 46%, rgba(255,214,64,.34), rgba(255,120,0,.10) 40%, transparent 66%)}
+#egg.on{opacity:1}
+
+@media(max-width:1000px){
+  .stage{grid-template-columns:1fr;min-height:0}
+  .editor-wrap{min-height:300px}
+  .viz-wrap{min-height:150px}
+  .brand h1{font-size:21px}
+  .legend{grid-template-columns:1fr}
+  .legend-panel{max-height:42vh}
+}
+@media(max-width:560px){
+  .app{padding:12px}
+  .brand{min-width:0}
+  .controls{width:100%;margin-left:0}
+  input[type=range]{width:70px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">♪</div>
+      <div>
+        <h1>CODE DJ <span class="sl">//</span> 1024</h1>
+        <p>SYNTHESIZER · 代码重金属与电音</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="btnPlay">▶ 编译演奏</button>
+      <button class="btn" id="btnStop" disabled>■ 停止</button>
+      <div class="knob">
+        <label>BPM</label>
+        <input type="range" id="bpm" min="70" max="185" step="1" value="128">
+        <output id="bpmOut">128</output>
+      </div>
+      <div class="knob">
+        <label>音量</label>
+        <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8">
+        <output id="volOut">80%</output>
+      </div>
+      <div class="seg" id="segStyle">
+        <button data-s="synth" class="on">赛博电音</button>
+        <button data-s="metal" class="metal">重金属</button>
+      </div>
+      <button class="btn ghost" id="btnP1">C++ 快速排序</button>
+      <button class="btn ghost" id="btnP2">CRC16 校验</button>
+      <button class="btn ghost" id="btnP3">1024 死循环</button>
+      <button class="btn ghost" id="btnP4">Rust 斐波那契</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="panel">
+      <div class="panel-head">
+        <span class="title">源代码 · SOURCE</span>
+        <span class="pill" id="langPill">C / C++</span>
+        <span class="spacer"></span>
+        <span class="pill" id="statPill">0 行 · 0 步</span>
+        <span class="pill" id="durPill">时长 0.0s</span>
+      </div>
+      <div class="editor-wrap">
+        <div class="editor" id="editor">
+          <div class="hl" id="hl"></div>
+          <div class="gutter"><div class="gutter-inner" id="gutter"></div></div>
+          <textarea id="code" spellcheck="false" wrap="off" autocomplete="off"
+            autocapitalize="off" autocorrect="off" aria-label="源代码输入"></textarea>
+          <div class="cursor" id="cursor"></div>
+        </div>
+      </div>
+      <div class="hint">粘贴任意 C / C++ / Python / Java / JS / TS / Go / Rust 代码 · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> 立即编译演奏 ·
+      逐字符驱动：<b>小写字母→五声音阶单音</b> · <b>大写→失真强力和弦</b> · <b>空格→休止</b> ·
+      播放中高亮当前发声的那个字符</div>
+    </section>
+
+    <div class="right">
+      <section class="panel viz-panel">
+        <div class="panel-head">
+          <span class="title">视听监控 · VIEW</span>
+          <div class="hud">
+            <span class="hud-badge" id="hudBadge">IDLE</span>
+            <span class="hud-text" id="hudText">等待编译…</span>
+          </div>
+        </div>
+        <div class="scope-wrap" id="scopeWrap"><canvas id="scope"></canvas></div>
+        <div class="viz-wrap" id="vizWrap"><canvas id="viz"></canvas></div>
+        <div class="struct-head">
+          <span class="title">结构时间轴 · STRUCTURE</span>
+          <span id="secPill" class="pill">0 段落</span>
+          <span class="spacer"></span>
+          <span id="depthPill" class="pill">深度 0 · 强度 0%</span>
+        </div>
+        <div class="struct-wrap" id="structWrap"><canvas id="struct"></canvas></div>
+        <div class="progress"><i id="prog"></i></div>
+      </section>
+
+      <section class="panel legend-panel">
+        <div class="panel-head">
+          <span class="title">字符映射 · MAPPING</span>
+          <span class="spacer"></span>
+          <span class="pill" id="mixPill">—</span>
+        </div>
+        <div class="legend" id="legend">
+          <div class="lrow" data-k="lower"><span class="dot"></span><code>a-z</code><span class="inst">五声音阶单音</span></div>
+          <div class="lrow" data-k="upper"><span class="dot"></span><code>A-Z</code><span class="inst">失真强力和弦</span></div>
+          <div class="lrow" data-k="digit"><span class="dot"></span><code>0-9</code><span class="inst">8-bit 脉冲波</span></div>
+          <div class="lrow" data-k="brace"><span class="dot"></span><code>{ }</code><span class="inst">808 底鼓 / 军鼓+镲</span></div>
+          <div class="lrow" data-k="semi"><span class="dot"></span><code>; ,</code><span class="inst">闭镲 HIHAT</span></div>
+          <div class="lrow" data-k="paren"><span class="dot"></span><code>( ) [ ]</code><span class="inst">边缘击打 RIM</span></div>
+          <div class="lrow" data-k="op"><span class="dot"></span><code>+ - * / =</code><span class="inst">FM 激光滑音</span></div>
+          <div class="lrow" data-k="space"><span class="dot"></span><code>␣ 空格</code><span class="inst">休止符 / 切分</span></div>
+          <div class="lrow" data-k="comment"><span class="dot"></span><code>// #</code><span class="inst">氛围铺底 PAD</span></div>
+          <div class="lrow" data-k="loop"><span class="dot"></span><code>for/while</code><span class="inst">块重复 ×2 · 提速</span></div>
+          <div class="lrow" data-k="if"><span class="dot"></span><code>if</code><span class="inst">三角波主音 · 左声道</span></div>
+          <div class="lrow" data-k="else"><span class="dot"></span><code>else</code><span class="inst">Reese 低音 · 右声道</span></div>
+          <div class="lrow" data-k="ret"><span class="dot"></span><code>return/break</code><span class="inst">磁带急停 + 空拍</span></div>
+          <div class="lrow" data-k="str"><span class="dot"></span><code>"text"</code><span class="inst">人声式合成 VOICE</span></div>
+          <div class="lrow" data-k="def"><span class="dot"></span><code>def/class</code><span class="inst">换段落 + 镲片</span></div>
+          <div class="lrow" data-k="type"><span class="dot"></span><code>int/float</code><span class="inst">闷通鼓 TOM</span></div>
+          <div class="lrow" data-k="indent"><span class="dot"></span><code>缩进 ␣␣␣␣</code><span class="inst">八度 &amp; 滤波截止</span></div>
+          <div class="lrow" data-k="egg"><span class="dot"></span><code>1024</code><span class="inst">八度爬音彩蛋</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="egg"></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════════
+   CODE DJ 1024  ·  代码重金属与电音合成器
+   Layer 1  基础设施 / 编辑器 / 字符级扫描器 / 五声音阶乐理
+   Layer 2  编曲器 Composer  —— 步进音序器 + 循环块真重复
+   Layer 3  音色引擎 AudioEngine
+   Layer 4  调度器 Scheduler + 可视化 Viz + 交互 UI
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ───────── Layer 1 · DOM & 常量 ───────── */
+const $ = id => document.getElementById(id);
+
+const codeEl    = $('code');
+const hlEl      = $('hl');
+const gutterEl  = $('gutter');
+const editorEl  = $('editor');
+const cursorEl  = $('cursor');
+const vizEl     = $('viz');
+const scopeEl   = $('scope');
+const structEl  = $('struct');
+const progEl    = $('prog');
+const eggEl     = $('egg');
+const hudBadge  = $('hudBadge');
+const hudText   = $('hudText');
+const langPill  = $('langPill');
+const statPill  = $('statPill');
+const durPill   = $('durPill');
+const secPill   = $('secPill');
+const depthPill = $('depthPill');
+const mixPill   = $('mixPill');
+const btnPlay   = $('btnPlay');
+const btnStop   = $('btnStop');
+const btnP1     = $('btnP1');
+const btnP2     = $('btnP2');
+const btnP3     = $('btnP3');
+const btnP4     = $('btnP4');
+const bpmEl     = $('bpm');
+const bpmOut    = $('bpmOut');
+const volEl     = $('vol');
+const volOut    = $('volOut');
+const segEl     = $('segStyle');
+const legendEl  = $('legend');
+const toastEl   = $('toast');
+
+const vizCtx    = vizEl.getContext('2d');
+const scopeCtx  = scopeEl.getContext('2d');
+const structCtx = structEl.getContext('2d');
+
+const LH = 24;                 /* 行高，必须与 CSS --lh 一致 */
+const BARS = 64;               /* 频谱柱数 */
+const ED_PAD_L = 66, ED_PAD_T = 14;
+const MAXDUR = 82;             /* 总时长上限（秒）：超出自动等比压缩 */
+const BUDGET = 4200;           /* 步进总数上限：防止嵌套循环爆炸 */
+let   DPR = Math.min(2, window.devicePixelRatio || 1);
+let   METAL = false;           /* 曲风：false 赛博电音 / true 重金属 */
+
+/* ───────── Layer 1 · E 小调五声音阶 ───────── */
+/* E2 G2 A2 B2 D3 E3 G3 A3 B3 D4 E4 G4 —— 怎么组合都不会刺耳 */
+const PENTA_NAME = ['E', 'G', 'A', 'B', 'D', 'E', 'G', 'A', 'B', 'D', 'E', 'G'];
+const PENTA_ST   = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24, 27];  /* 相对 E2 的半音 */
+const ROOT_HZ    = 82.4069;    /* E2 */
+const ROOTS      = [0, 3, 5, 2, 7];   /* 段落根音（五声音阶级数偏移） */
+
+function pentaFreq(i){
+  const n = PENTA_ST.length, oct = Math.floor(i / n), k = ((i % n) + n) % n;
+  return ROOT_HZ * Math.pow(2, (PENTA_ST[k] + 12 * oct) / 12);
+}
+function pentaName(i){
+  const n = PENTA_ST.length, oct = Math.floor(i / n), k = ((i % n) + n) % n;
+  const st = PENTA_ST[k] + 12 * oct;
+  return PENTA_NAME[k] + (2 + Math.floor(st / 12));
+}
+function intenOf(d){ return Math.max(0, Math.min(1, d / 3.4)); }
+function hashNum(s){ let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; } return h; }
+
+/* ───────── Layer 1 · 预设曲库 ───────── */
+const PRESETS = [
+  { name: 'C++ 快速排序', code: [
+'// CODE DJ 1024 :: 快速排序狂想曲',
+'#include <iostream>',
+'#include <vector>',
+'',
+'int partition(std::vector<int>& a, int lo, int hi) {',
+'    int pivot = a[hi];',
+'    int i = lo - 1;',
+'    for (int j = lo; j < hi; j++) {',
+'        if (a[j] < pivot) {',
+'            i++;',
+'            std::swap(a[i], a[j]);',
+'        } else {',
+'            a[j] = a[j] + 0;',
+'        }',
+'    }',
+'    std::swap(a[i + 1], a[hi]);',
+'    return i + 1;',
+'}',
+'',
+'void quickSort(std::vector<int>& a, int lo, int hi) {',
+'    if (lo >= hi) return;',
+'    int p = partition(a, lo, hi);',
+'    quickSort(a, lo, p - 1);',
+'    quickSort(a, p + 1, hi);',
+'}',
+'',
+'int main() {',
+'    std::vector<int> data = { 1024, 512, 256, 128, 64, 32 };',
+'    quickSort(data, 0, data.size() - 1);',
+'    for (int v : data) std::cout << v << " ";',
+'    return 0;',
+'}'
+  ].join('\n') },
+  { name: '嵌入式 CRC16 校验', code: [
+'/* CODE DJ 1024 :: Modbus CRC16 校验重金属 */',
+'#define POLY 0xA001',
+'#define INIT 0xFFFF',
+'',
+'typedef struct {',
+'    unsigned char addr;',
+'    unsigned char func;',
+'    unsigned short crc;',
+'} ModbusFrame;',
+'',
+'unsigned short crc16(const unsigned char *buf, unsigned short len) {',
+'    unsigned short crc = INIT;',
+'    for (unsigned short i = 0; i < len; i++) {',
+'        crc ^= buf[i];',
+'        for (unsigned char b = 0; b < 8; b++) {',
+'            if (crc & 1) {',
+'                crc = (crc >> 1) ^ POLY;',
+'            } else {',
+'                crc >>= 1;',
+'            }',
+'        }',
+'    }',
+'    return crc;',
+'}',
+'',
+'int main(void) {',
+'    unsigned char frame[6] = { 0x01, 0x03, 0x00, 0x0A, 0x10, 0x24 };',
+'    unsigned short c = crc16(frame, 6);',
+'    printf("CRC = 0x%04X\\n", c);',
+'    while (1) { c ^= 0x1024; break; }',
+'    return 0;',
+'}'
+  ].join('\n') },
+  { name: '1024 狂暴死循环', code: [
+'// CODE DJ 1024 :: 狂暴死循环 while(1)',
+'#include <stdio.h>',
+'#define LIMIT 1024',
+'',
+'int main() {',
+'    int counter = 0;',
+'    while (1) {',
+'        for (int i = 0; i < 8; i++) {',
+'            counter += 1024;',
+'            if (counter % 2 == 0) {',
+'                printf("SYNC %d\\n", counter);',
+'            } else {',
+'                counter = counter / 2;',
+'            }',
+'        }',
+'        if (counter > LIMIT) break;',
+'    }',
+'    return 0;',
+'}'
+  ].join('\n') },
+  { name: 'Rust 斐波那契', code: [
+'// CODE DJ 1024 :: Rust 斐波那契金属',
+'use std::collections::HashMap;',
+'',
+'fn fib(n: u64, memo: &mut HashMap<u64, u64>) -> u64 {',
+'    if n < 2 {',
+'        return n;',
+'    }',
+'    if let Some(&v) = memo.get(&n) {',
+'        return v;',
+'    }',
+'    let r = fib(n - 1, memo) + fib(n - 2, memo);',
+'    memo.insert(n, r);',
+'    r',
+'}',
+'',
+'fn main() {',
+'    let mut memo = HashMap::new();',
+'    for i in 0..16 {',
+'        let v = fib(i, &mut memo);',
+'        match v {',
+'            1024 => println!("JACKPOT {}", v),',
+'            _ => println!("fib({}) = {}", i, v),',
+'        }',
+'    }',
+'}'
+  ].join('\n') }
+];
+
+/* ───────── Layer 1 · 语言识别 & 语法着色（只着色，绝不动字重） ───────── */
+const KW_C = /^(if|else|for|while|do|switch|case|default|break|continue|return|goto|sizeof|struct|class|union|enum|namespace|template|typename|using|typedef|const|static|extern|inline|virtual|public|private|protected|new|delete|try|catch|throw|int|float|double|char|void|bool|long|short|unsigned|signed|auto|operator|nullptr|true|false|this|std|include|define|pragma|ifdef|ifndef|endif|printf|scanf|cout|cin|endl|function|func|fn|interface|impl|var|let|final|mut|pub|async|await|readonly|typeof|package|import|from|export|use|mod|require|match|defer|panic|throws|console|println|echo|null|undefined)$/;
+const KW_PY = /^(if|elif|else|for|while|def|class|return|break|continue|pass|import|from|as|with|try|except|finally|raise|assert|lambda|yield|global|nonlocal|del|in|is|not|and|or|None|True|False|self|print|range|len|int|float|str|list|dict|set|tuple|math|sum|min|max|abs|pow)$/;
+const TOKEN_RE = /(\/\/[^\n]*|#[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[A-Za-z_]\w*|\d+\.?\d*)/g;
+
+function esc(s){ return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const LANG_NAME = { py:'Python', c:'C / C++', java:'Java', js:'JavaScript / TS', go:'Go', rust:'Rust' };
+function detectLang(src){
+  if(/\bdef\s+\w+\s*\(|\bclass\s+\w+[^\n]*:|\belif\b|\bself\.|\bimport\s+[\w.]+|^\s*print\s*\(/m.test(src)) return 'py';
+  if(/^\s*#/m.test(src) && !/^\s*#\s*(include|define|pragma|ifdef|ifndef|endif|undef|error)/m.test(src)) return 'py';
+  if(/\bfn\s+\w+\s*\(|println!|\blet\s+mut\s|\bimpl\s+\w|\buse\s+\w+::/m.test(src)) return 'rust';
+  if(/^\s*package\s+\w+\s*$|\bfunc\s+\w+\s*\(|\w+\s*:=\s*|\bfmt\./m.test(src)) return 'go';
+  if(/\bpublic\s+(static\s+)?(void|class|final)\b|\bSystem\.out\.|\bimport\s+[\w.]+\s*;|\bpackage\s+[\w.]+\s*;/m.test(src)) return 'java';
+  if(/\bfunction\s*\w*\s*\(|=>|\bconsole\.log|\brequire\s*\(|\bmodule\.exports|\bexport\s+(default|const|function|class)/m.test(src)) return 'js';
+  return 'c';
+}
+function tokClass(tok, lang){
+  if(tok.slice(0, 2) === '//' || tok.slice(0, 2) === '/*') return 'tk-com';
+  if(tok[0] === '#' && lang === 'py') return 'tk-com';
+  if(tok[0] === '#' && lang !== 'py') return 'tk-pre';
+  if(tok[0] === '"' || tok[0] === "'") return 'tk-str';
+  if(/^\d/.test(tok)) return 'tk-num';
+  const kw = (lang === 'py') ? KW_PY : KW_C;
+  return kw.test(tok) ? 'tk-kw' : 'tk-id';
+}
+function highlightLine(line, lang){
+  let out = '', last = 0, m;
+  TOKEN_RE.lastIndex = 0;
+  while((m = TOKEN_RE.exec(line))){
+    if(m.index > last) out += esc(line.slice(last, m.index));
+    const tok = m[0];
+    out += '<span class="' + tokClass(tok, lang) + '">' + esc(tok) + '</span>';
+    last = m.index + tok.length;
+  }
+  out += esc(line.slice(last));
+  return out.length ? out : '&nbsp;';
+}
+
+/* ───────── Layer 1 · 编辑器三件套 + 逐字符游标 ───────── */
+let currentLang = 'c';
+let lineCache = [''];
+let charW = 8.13;
+let hotLine = -1;
+
+function renderCode(){
+  const lines = codeEl.value.split('\n');
+  let h = '', g = '';
+  for(let i = 0; i < lines.length; i++){
+    h += '<div class="line" data-l="' + i + '">' + highlightLine(lines[i], currentLang) + '</div>';
+    g += '<div class="g" data-g="' + i + '">' + (i + 1) + '</div>';
+  }
+  hlEl.innerHTML = h;
+  gutterEl.innerHTML = g;
+  lineCache = lines;
+  hotLine = -1;
+}
+function syncScroll(){
+  hlEl.scrollTop = codeEl.scrollTop;
+  hlEl.scrollLeft = codeEl.scrollLeft;
+  gutterEl.style.transform = 'translateY(' + (-codeEl.scrollTop) + 'px)';
+}
+function measureChar(){
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;' +
+    'font-family:"Share Tech Mono",ui-monospace,Consolas,monospace;font-size:13.5px;font-weight:400;letter-spacing:0';
+  probe.textContent = 'MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM';   /* 52 个 */
+  document.body.appendChild(probe);
+  const w = probe.getBoundingClientRect().width / 52;
+  probe.remove();
+  if(w > 1) charW = w;
+}
+function lineX(lineIdx, col){
+  const txt = lineCache[lineIdx] || '';
+  let x = 0, n = Math.min(col, txt.length);
+  for(let i = 0; i < n; i++) x += (txt[i] === '\t') ? 4 * charW : charW;
+  return x;
+}
+function showCursor(lineIdx, col, len){
+  if(lineIdx < 0){ cursorEl.classList.remove('on'); return; }
+  const y = ED_PAD_T + lineIdx * LH - codeEl.scrollTop;
+  const x = lineX(lineIdx, col) - codeEl.scrollLeft;
+  const w = Math.max(charW * 1.05, Math.min(len || 1, 6) * charW);
+  cursorEl.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+  cursorEl.style.width = w.toFixed(1) + 'px';
+  cursorEl.style.height = (LH - 4) + 'px';
+  cursorEl.classList.add('on');
+  cursorEl.classList.toggle('metal', METAL);
+}
+function hideCursor(){ cursorEl.classList.remove('on'); }
+
+function setActiveLine(li){
+  if(hotLine >= 0){
+    const p = hlEl.children[hotLine], gp = gutterEl.children[hotLine];
+    if(p) p.classList.remove('active', 'ok');
+    if(gp) gp.classList.remove('hot');
+  }
+  hotLine = li;
+  if(li >= 0){
+    const p = hlEl.children[li], gp = gutterEl.children[li];
+    if(p){ p.classList.add('active'); if(METAL) p.classList.add('ok'); }
+    if(gp) gp.classList.add('hot');
+  }
+}
+function clearActive(){ setActiveLine(-1); }
+function ensureVisible(li){
+  const y = ED_PAD_T + li * LH, vh = codeEl.clientHeight, cur = codeEl.scrollTop;
+  if(y < cur + LH || y + LH > cur + vh - LH){
+    codeEl.scrollTop = Math.max(0, y - vh * 0.42);
+    syncScroll();
+  }
+}
+
+/* ───────── Layer 1 · 关键字语义表 ───────── */
+const KW_MAP = {
+  c: {
+    'if':'if', 'else':'else', 'elif':'else',
+    'for':'loop', 'while':'loop', 'do':'loop',
+    'return':'ret', 'break':'ret', 'continue':'ret', 'goto':'ret',
+    'def':'def', 'class':'def', 'struct':'def', 'namespace':'def', 'enum':'def', 'union':'def',
+    'int':'type', 'float':'type', 'double':'type', 'char':'type', 'void':'type', 'bool':'type',
+    'long':'type', 'short':'type', 'unsigned':'type', 'signed':'type', 'auto':'type',
+    'const':'type', 'static':'type', 'extern':'type', 'inline':'type',
+    'virtual':'type', 'public':'type', 'private':'type', 'protected':'type', 'typedef':'type',
+    'using':'imp', 'include':'imp', 'define':'imp', 'pragma':'imp', 'ifdef':'if', 'ifndef':'if', 'endif':'ret',
+    'new':'mem', 'delete':'mem', 'malloc':'mem', 'free':'mem',
+    'try':'try', 'catch':'try', 'throw':'ret',
+    'printf':'io', 'scanf':'io', 'cout':'io', 'cin':'io', 'puts':'io',
+    /* ── 跨语言扩展：Java / JS / TS / Go / Rust / C# ── */
+    'function':'def', 'func':'def', 'fn':'def', 'interface':'def', 'impl':'def',
+    'var':'type', 'let':'type', 'final':'type', 'mut':'type', 'pub':'type',
+    'async':'type', 'await':'type', 'readonly':'type', 'typeof':'type',
+    'package':'imp', 'import':'imp', 'from':'imp', 'export':'imp',
+    'use':'imp', 'mod':'imp', 'require':'imp',
+    'switch':'if', 'case':'if', 'match':'if', 'default':'else',
+    'defer':'ret', 'panic':'ret', 'throws':'ret',
+    'console':'io', 'println':'io', 'echo':'io'
+  },
+  py: {
+    'if':'if', 'elif':'else', 'else':'else',
+    'for':'loop', 'while':'loop',
+    'return':'ret', 'break':'ret', 'continue':'ret', 'pass':'ret', 'yield':'ret', 'raise':'ret',
+    'def':'def', 'class':'def', 'lambda':'def',
+    'import':'imp', 'from':'imp',
+    'print':'io', 'open':'io', 'input':'io',
+    'del':'mem',
+    'assert':'try', 'try':'try', 'except':'try', 'finally':'try', 'with':'try',
+    'int':'type', 'float':'type', 'str':'type', 'list':'type', 'dict':'type', 'set':'type',
+    'tuple':'type', 'bool':'type', 'None':'type', 'True':'type', 'False':'type'
+  }
+};
+/* 单字符标点 → 语义 */
+const CH_KIND = {
+  '{':'brace-open', '}':'brace-close',
+  ';':'hihat', ',':'hihat',
+  '(':'rim', ')':'rim', '[':'rim', ']':'rim',
+  '+':'op', '-':'op', '*':'op', '/':'op', '%':'op', '=':'op',
+  '<':'cmp', '>':'cmp', '&':'op', '|':'op', '^':'op', '~':'op', '?':'op', '!':'op', ':':'hihat',
+  '.':'rest', '\\':'rest', '@':'rest', '$':'rest'
+};
+const OP2_CMP = { '==':1, '!=':1, '<=':1, '>=':1, '<<':1, '>>':1, '->':1, ':=':1, '=>':1 };
+const OP2_LOGIC = { '&&':1, '||':1 };
+const OP2_OP = { '++':1, '--':1, '+=':1, '-=':1, '*=':1, '/=':1, '%=':1, '&=':1, '|=':1, '**':1, '>>=':1 };
+
+function kwKind(word, lang){ const m = (lang === 'py') ? KW_MAP.py : KW_MAP.c; return m[word] || null; }
+function leadIndent(line){
+  let n = 0;
+  for(let i = 0; i < line.length; i++){
+    const c = line[i];
+    if(c === ' ') n++; else if(c === '\t') n += 4; else break;
+  }
+  return n;
+}
+
+/* ───────── Layer 1 · 扫描器 Scanner（字符级 Tokenizer） ───────── */
+function scanCode(src, lang){
+  const lines = src.replace(/\r/g, '').split('\n');
+  const evs = [];
+  let section = 0, inBlock = false;
+
+  /* 彩蛋：所有 "1024" 出现的 行 / 列 */
+  const eggs = [];
+  { const re = /1024/g; let m;
+    while((m = re.exec(src)) && eggs.length < 16){
+      const before = src.slice(0, m.index);
+      eggs.push({ line: (before.match(/\n/g) || []).length, col: m.index - (before.lastIndexOf('\n') + 1) });
+    } }
+  const isEgg = (line, col, len) =>
+    eggs.some(e => e.line === line && e.col >= col && e.col < col + Math.max(1, len));
+
+  function push(line, col, kind, raw, depth, sec){
+    evs.push({ line, col, len: raw.length, dlen: Math.min(raw.length, 6), kind, raw,
+               depth, section: sec, egg: isEgg(line, col, raw.length) });
+    if(kind === 'ret'){                       /* 磁带急停后 → 休止一拍（4 个 16 分格） */
+      for(let k = 1; k <= 4; k++)
+        evs.push({ line, col: col + raw.length + k, len: 1, dlen: 1, kind: 'rest', raw: ' ',
+                   depth, section: sec, egg: false });
+    }
+  }
+  function emitComment(li, col, depth, sec, totalLen){
+    const n = Math.max(2, Math.min(6, Math.ceil(totalLen / 8)));
+    for(let k = 0; k < n; k++){
+      evs.push({ line: li, col, len: Math.max(1, Math.round(totalLen / n)), dlen: 4, kind: 'comment',
+                 raw: k === 0 ? lines[li].slice(col) : '', depth, section: sec, egg: false,
+                 padStart: k === 0, padSlots: n });
+    }
+  }
+
+  for(let li = 0; li < lines.length; li++){
+    const line = lines[li];
+    const indent = leadIndent(line);
+    const depth = Math.min(4, Math.floor(indent / 4));
+    const trimmed = line.trim();
+
+    if(inBlock){                                   /* 跨行块注释 */
+      const k = line.indexOf('*/');
+      emitComment(li, 0, depth, section, k >= 0 ? k + 2 : line.length);
+      if(k >= 0) inBlock = false;
+      continue;
+    }
+    if(lang !== 'py' && trimmed.startsWith('//')){ emitComment(li, 0, depth, section, line.length); continue; }
+    if(lang !== 'py' && trimmed.startsWith('/*')){
+      const k = line.indexOf('*/', line.indexOf('/*') + 2);
+      emitComment(li, 0, depth, section, k >= 0 ? k + 2 : line.length);
+      if(k < 0) inBlock = true;
+      continue;
+    }
+    if(lang === 'py' && trimmed.startsWith('#')){ emitComment(li, 0, depth, section, line.length); continue; }
+
+    let i = 0;
+    while(i < line.length){
+      const c = line[i];
+
+      if(c === ' ' || c === '\t'){                 /* 空白 → 休止符（整段 = 1 格） */
+        let j = i;
+        while(j < line.length && (line[j] === ' ' || line[j] === '\t')) j++;
+        push(li, i, 'rest', line.slice(i, j), depth, section);
+        i = j; continue;
+      }
+      if(lang !== 'py' && c === '/' && line[i + 1] === '/'){   /* 行内注释 */
+        emitComment(li, i, depth, section, line.length - i); break;
+      }
+      if(lang !== 'py' && c === '/' && line[i + 1] === '*'){
+        const k = line.indexOf('*/', i + 2);
+        emitComment(li, i, depth, section, k >= 0 ? (k + 2 - i) : (line.length - i));
+        if(k < 0){ inBlock = true; break; }
+        i = k + 2; continue;
+      }
+      if(pyHashStart(lang, c)){ emitComment(li, i, depth, section, line.length - i); break; }
+      if(c === '"' || c === "'"){                  /* 字符串 → 人声合成 */
+        let j = i + 1;
+        while(j < line.length && line[j] !== c){ if(line[j] === '\\') j++; j++; }
+        push(li, i, 'str', line.slice(i, Math.min(j + 1, line.length)), depth, section);
+        i = Math.min(j + 1, line.length); continue;
+      }
+      if(/[A-Za-z_]/.test(c)){                     /* 标识符 / 关键字 */
+        let j = i;
+        while(j < line.length && /[A-Za-z0-9_]/.test(line[j])) j++;
+        const word = line.slice(i, j);
+        const kk = kwKind(word, lang);
+        if(kk){
+          push(li, i, kk, word, depth, section);
+          if(kk === 'def') section++;
+        } else {
+          for(let k = i; k < j; k++){              /* 逐字符：唯一旋律来源 */
+            const ch = line[k];
+            push(li, k, /[A-Z]/.test(ch) ? 'upper' : (/[0-9]/.test(ch) ? 'digit' : 'lower'), ch, depth, section);
+          }
+        }
+        i = j; continue;
+      }
+      if(/[0-9]/.test(c)){                         /* 数字 → 8-bit 脉冲 */
+        let j = i;
+        while(j < line.length && /[0-9a-fA-FxX._]/.test(line[j])) j++;
+        for(let k = i; k < j; k++){
+          const ch = line[k];
+          push(li, k, /[0-9]/.test(ch) ? 'digit' : (/[A-Za-z]/.test(ch) ? (/[A-Z]/.test(ch) ? 'upper' : 'lower') : 'rest'),
+               ch, depth, section);
+        }
+        i = j; continue;
+      }
+      const two = line.substr(i, 2);
+      if(OP2_CMP[two]){   push(li, i, 'cmp',   two, depth, section); i += 2; continue; }
+      if(OP2_LOGIC[two]){ push(li, i, 'logic', two, depth, section); i += 2; continue; }
+      if(OP2_OP[two]){    push(li, i, 'op',    two, depth, section); i += 2; continue; }
+      if(two === '::'){ i += 2; continue; }
+      const k2 = CH_KIND[c];
+      if(k2){ push(li, i, k2, c, depth, section); i++; continue; }
+      i++;                                          /* 其它符号忽略，但仍推进网格 */
+    }
+  }
+  return { evs, lines: lines.length };
+}
+function pyHashStart(lang, c){ return (lang === 'py' && c === '#'); }
+
+/* ───────── Layer 2 · 编曲器 Composer ───────── */
+const TRACK_NAME = ['节奏', '贝斯', '旋律', '和声', '特效'];
+const TRACK_COLOR = ['#00e5ff', '#b6ff00', '#ff2d95', '#7c6bff', '#ffb320'];
+const HUE = [[0,229,255],[255,45,149],[124,107,255],[182,255,0],[255,179,32]];
+
+function addNote(list, track, inst, t, vol, extra){
+  const n = { track, inst, t, vol };
+  if(extra) for(const k in extra) n[k] = extra[k];
+  list.push(n);
+  return n;
+}
+
+/* 找出所有 for / while 块的「体」区间（条目下标） */
+function buildLoops(evs, lines, lang){
+  const stack = [], match = new Map();
+  for(let i = 0; i < evs.length; i++){
+    if(evs[i].kind === 'brace-open') stack.push(i);
+    else if(evs[i].kind === 'brace-close'){ const o = stack.pop(); if(o != null) match.set(o, i); }
+  }
+  const first = new Map(), last = new Map();
+  for(let i = 0; i < evs.length; i++){
+    const l = evs[i].line;
+    if(!first.has(l)) first.set(l, i);
+    last.set(l, i);
+  }
+  const bodies = new Map();
+  for(let i = 0; i < evs.length; i++){
+    if(evs[i].kind !== 'loop') continue;
+    if(lang === 'py'){
+      const hInd = leadIndent(lines[evs[i].line]);
+      let s = -1, e = -1;
+      for(let li = evs[i].line + 1; li < lines.length; li++){
+        if(lines[li].trim() === '') continue;
+        if(leadIndent(lines[li]) <= hInd){ if(s >= 0) break; else continue; }
+        if(s < 0) s = li;
+        e = li;
+      }
+      if(s >= 0 && first.has(s) && last.has(e)) bodies.set(i, [first.get(s), last.get(e), -1, -1]);
+    } else {
+      let o = -1;
+      for(let j = i + 1; j < evs.length && evs[j].line <= evs[i].line + 2; j++){
+        if(evs[j].kind === 'brace-open'){ o = j; break; }
+        if(evs[j].kind === 'brace-close') break;
+      }
+      if(o >= 0 && match.has(o) && match.get(o) > o + 1) bodies.set(i, [o + 1, match.get(o) - 1, o, match.get(o)]);
+    }
+  }
+  return bodies;
+}
+
+/* 展开：循环块「真重复 2 遍」，第二遍 BPM +5%（tempo × 1.05） */
+function buildSteps(evs, bodies, lang){
+  const out = [];
+  let budget = BUDGET;
+  const MAXNEST = 4;
+  const lineLast = new Map();
+  for(let i = 0; i < evs.length; i++) lineLast.set(evs[i].line, i);
+
+  function emit(a, b, nest, tempo){
+    let i = a;
+    while(i <= b && i < evs.length){
+      const e = evs[i];
+      const bd = bodies.get(i);
+      if(e.kind === 'loop' && bd && nest < MAXNEST && budget > 0){
+        const ba = bd[0], bb = bd[1], oi = bd[2], ci = bd[3];
+        if(oi >= 0){                                 /* C / C++：花括号块 */
+          for(let k = i; k <= oi; k++){ out.push({ e: evs[k], tempo }); budget--; }
+        } else {                                     /* Python：缩进块 */
+          const hl = lineLast.get(e.line) || i;
+          for(let k = i; k <= hl; k++){ out.push({ e: evs[k], tempo }); budget--; }
+        }
+        const n = bb - ba + 1;
+        if(n > 0){
+          budget -= n; emit(ba, bb, nest + 1, tempo);
+          if(budget > 0){ budget -= n; emit(ba, bb, nest + 1, tempo * 1.05); }
+        }
+        if(ci >= 0 && evs[ci]){ out.push({ e: evs[ci], tempo }); budget--; }
+        i = (ci >= 0 ? ci : bb) + 1;
+        continue;
+      }
+      out.push({ e, tempo });
+      budget--;
+      i++;
+    }
+  }
+  emit(0, evs.length - 1, 0, 1);
+  return out;
+}
+
+function compose(src, lang, bpm){
+  const clean = src.replace(/\r/g, '');
+  const sc = scanCode(src, lang);
+  const evs = sc.evs;
+  if(evs.length < 8) return null;
+
+  const loops = buildLoops(evs, clean.split('\n'), lang);
+  const steps = buildSteps(evs, loops, lang);
+  if(steps.length < 4) return null;
+
+  /* 采样级时间轴：每个 16 分格的绝对时刻 */
+  const N = steps.length;
+  const base16 = 60 / bpm / 4;
+  let sum = 0;
+  for(let i = 0; i < N; i++) sum += base16 / steps[i].tempo;
+  const scale = sum > MAXDUR ? MAXDUR / sum : 1;
+  const times = new Float64Array(N);
+  let t = 0.12;
+  for(let i = 0; i < N; i++){
+    const d = base16 * scale / steps[i].tempo;
+    times[i] = t;
+    steps[i].dur = d;
+    t += d;
+  }
+  const duration = t + 1.8;
+  const st16 = base16 * scale;
+
+  const notes = [];
+  const meta = new Array(N);
+  const energy = new Float32Array(N);
+  const eggTimes = [];
+
+  for(let i = 0; i < N; i++){
+    const S = steps[i], e = S.e, d = e.depth;
+    meta[i] = { line: e.line, col: e.col, len: e.dlen || e.len, kind: e.kind,
+                depth: d, section: e.section, egg: !!e.egg, dur: S.dur, t: times[i] };
+
+    const root = ROOTS[e.section % ROOTS.length] || 0;
+    const oct = Math.min(3, d);
+    const T = times[i];
+    const cut = Math.min(9000, 420 + d * 1500 + (METAL ? 2400 : 0));
+    const idur = Math.max(0.085, S.dur * 1.9);
+    const inten = intenOf(d);
+
+    switch(e.kind){
+      case 'lower':
+        addNote(notes, 2, 'lead', T, 0.14 + 0.09 * inten,
+          { freq: pentaFreq((e.raw.charCodeAt(0) % 10) + root + oct * 7), dur: idur, cut, step: i });
+        energy[i] += 0.5;
+        break;
+      case 'upper':
+        addNote(notes, METAL ? 2 : 3, 'power', T, 0.17 + 0.09 * inten,
+          { freq: pentaFreq((e.raw.charCodeAt(0) % 10) + root + oct * 7), dur: idur * 1.6, cut, step: i });
+        energy[i] += 0.7;
+        break;
+      case 'digit':
+        addNote(notes, 2, 'pulse', T, 0.12 + 0.06 * inten,
+          { freq: pentaFreq((e.raw.charCodeAt(0) - 48) + 6 + oct * 5), dur: Math.min(idur, S.dur * 1.3), step: i });
+        energy[i] += 0.45;
+        break;
+      case 'brace-open':
+        addNote(notes, 0, 'kick', T, 0.55 + 0.20 * inten, { step: i });
+        if(METAL && d >= 2) addNote(notes, 0, 'kick', T + S.dur * 0.5, 0.34, { step: i });
+        energy[i] += 1.0;
+        break;
+      case 'brace-close':
+        addNote(notes, 0, 'snare', T, 0.50 + 0.15 * inten, { step: i });
+        addNote(notes, 0, 'crash', T, 0.30, { step: i });
+        energy[i] += 0.9;
+        break;
+      case 'hihat':
+        addNote(notes, 0, 'hihatC', T, 0.20 + 0.15 * inten, { step: i });
+        energy[i] += 0.4;
+        break;
+      case 'rim':
+        addNote(notes, 0, 'rim', T, 0.18 + 0.10 * inten, { step: i });
+        energy[i] += 0.35;
+        break;
+      case 'op':
+        addNote(notes, 4, 'laser', T, 0.13,
+          { freq: pentaFreq((e.raw.charCodeAt(0) % 10) + root + oct * 5), step: i });
+        energy[i] += 0.3;
+        break;
+      case 'cmp':
+        addNote(notes, 4, 'riser', T, 0.18, { dur: S.dur * 4, step: i });
+        energy[i] += 0.4;
+        break;
+      case 'logic':
+        addNote(notes, 3, 'power', T, 0.16,
+          { freq: pentaFreq(root + 2 + oct * 7), dur: idur * 1.5, cut, step: i });
+        energy[i] += 0.5;
+        break;
+      case 'if':
+        addNote(notes, 2, 'lead', T, 0.24,
+          { freq: pentaFreq(2 + root + oct * 7), dur: idur * 2.4, cut, pan: -0.35, wave: 'triangle', step: i });
+        energy[i] += 0.6;
+        break;
+      case 'else':
+        addNote(notes, 1, 'reese', T, 0.26,
+          { freq: pentaFreq(root + oct * 7) / 2, dur: idur * 2.6, pan: 0.62, step: i });
+        energy[i] += 0.7;
+        break;
+      case 'loop':
+        addNote(notes, 2, 'arpUp', T, 0.20,
+          { freqs: [0, 2, 4, 7, 9].map(k => pentaFreq(root + 2 + k + oct * 5)), dur: idur * 3, step: i });
+        addNote(notes, 0, 'kick', T, 0.45, { step: i });
+        energy[i] += 0.9;
+        break;
+      case 'ret':
+        addNote(notes, 4, 'tapestop', T, 0.42, { step: i });
+        energy[i] += 0.8;
+        break;
+      case 'def':
+        addNote(notes, 0, 'crash', T, 0.38, { step: i });
+        addNote(notes, 2, 'lead', T, 0.22,
+          { freq: pentaFreq(root + oct * 7 + 4), dur: idur * 2, cut, step: i });
+        energy[i] += 0.8;
+        break;
+      case 'str':
+        addNote(notes, 2, 'voice', T, 0.17,
+          { freq: pentaFreq((hashNum(e.raw) % 8) + root + oct * 7), step: i });
+        energy[i] += 0.4;
+        break;
+      case 'io':
+        addNote(notes, 2, 'voice', T, 0.15, { freq: pentaFreq(root + 3 + oct * 7), step: i });
+        energy[i] += 0.4;
+        break;
+      case 'mem':
+        addNote(notes, 4, 'riser', T, 0.20, { dur: idur * 4, step: i });
+        energy[i] += 0.35;
+        break;
+      case 'imp':
+        addNote(notes, 4, 'sweep', T, 0.22, { dur: 0.85, step: i });
+        energy[i] += 0.35;
+        break;
+      case 'type':
+        addNote(notes, 0, 'tom', T, 0.13, { freq: 150, step: i });
+        energy[i] += 0.3;
+        break;
+      case 'try':
+        addNote(notes, 3, 'power', T, 0.17,
+          { freq: pentaFreq(root + 1 + oct * 7), dur: idur * 1.6, cut, step: i });
+        energy[i] += 0.5;
+        break;
+      case 'comment':
+        if(e.padStart) addNote(notes, 3, 'pad', T, 0.22,
+          { freq: pentaFreq(root - 3), dur: Math.max(1.4, S.dur * (e.padSlots + 1)), minor: true, step: i });
+        energy[i] += 0.2;
+        break;
+    }
+    if(e.egg){
+      addNote(notes, 4, 'egg', T, 0.46, { freq: pentaFreq(root + 6), dur: 1.0, step: i });
+      energy[i] += 0.9;
+      eggTimes.push(T);
+    }
+  }
+
+  /* 贝斯线：每 4 格一记，跟随段落根音 */
+  for(let i = 0; i < N; i += 4){
+    const e = steps[i].e;
+    const root = ROOTS[e.section % ROOTS.length] || 0;
+    const oct = Math.min(3, e.depth);
+    addNote(notes, 1, 'bass', times[i], 0.26 + 0.06 * intenOf(oct),
+      { freq: pentaFreq(root + (oct >= 2 ? 7 : 0)) / 2, dur: Math.min(1.1, steps[i].dur * 3.6), step: i });
+    energy[i] += 0.6;
+  }
+  /* 重金属双踩底鼓：每拍一记 */
+  if(METAL){
+    for(let i = 0; i < N; i += 4){
+      addNote(notes, 0, 'kick', times[i], 0.40, { step: i });
+      energy[i] += 0.5;
+    }
+  }
+
+  /* 段落统计 + 段落氛围铺底 */
+  const agg = new Map();
+  for(let i = 0; i < N; i++){
+    const e = steps[i].e;
+    let a = agg.get(e.section);
+    if(!a){ a = { idx: e.section, i0: i, i1: i, dSum: 0, cnt: 0 }; agg.set(e.section, a); }
+    a.i1 = i; a.dSum += e.depth; a.cnt++;
+  }
+  const secBounds = [];
+  for(const a of agg.values()){
+    const avgDepth = a.dSum / Math.max(1, a.cnt);
+    const root = ROOTS[a.idx % ROOTS.length] || 0;
+    const t0 = times[a.i0], t1 = times[a.i1] + steps[a.i1].dur;
+    secBounds.push({ idx: a.idx, t0, t1, avgDepth, root });
+    if(a.i1 - a.i0 >= 6)
+      addNote(notes, 3, 'pad', t0, 0.13,
+        { freq: pentaFreq(root), dur: t1 - t0 + 0.5, minor: true, step: a.i0 });
+  }
+  secBounds.sort((x, y) => x.t0 - y.t0);
+
+  /* 平滑强度曲线（用于时间轴 / HUD） */
+  const sm = new Float32Array(N);
+  for(let i = 0; i < N; i++){
+    let s = 0, c = 0;
+    for(let k = Math.max(0, i - 6); k <= Math.min(N - 1, i + 6); k++){ s += energy[k]; c++; }
+    sm[i] = s / Math.max(1, c);
+  }
+  let mx = 0.0001;
+  for(let i = 0; i < N; i++) if(sm[i] > mx) mx = sm[i];
+  for(let i = 0; i < N; i++) meta[i].inten = Math.min(1, sm[i] / mx);
+
+  /* 结构时间轴曲线（归一化时间 / 深度） */
+  const curveT = new Float32Array(N), curveD = new Float32Array(N);
+  for(let i = 0; i < N; i++){
+    curveT[i] = Math.min(1, times[i] / Math.max(0.001, duration));
+    curveD[i] = Math.min(1, steps[i].e.depth / 4);
+  }
+
+  return { evs, steps, notes, meta, times, total: N, duration, st16,
+           secBounds, curveT, curveD, eggTimes, bpm, scale, lines: sc.lines };
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Layer 3 · 音色引擎 AudioEngine
+   纯合成器：只接受「何时弹哪个音、多大声」，不理解代码语义
+   ══════════════════════════════════════════════════════════════════ */
+let ctx = null, nodes = null;
+let active = [];
+let freqArr = null, waveArr = null, peaks = null;
+
+function driveCurve(k){
+  const n = 1024, c = new Float32Array(n);
+  for(let i = 0; i < n; i++){ const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x); }
+  return c;
+}
+function impulseBuf(dur, decay){
+  const len = Math.floor(ctx.sampleRate * dur);
+  const b = ctx.createBuffer(2, len, ctx.sampleRate);
+  for(let ch = 0; ch < 2; ch++){
+    const d = b.getChannelData(ch);
+    for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+  }
+  return b;
+}
+function noiseBuffer(dur){
+  const len = Math.floor(ctx.sampleRate * dur);
+  const b = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = b.getChannelData(0);
+  for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+
+function initAudio(){
+  if(ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  nodes = {};
+
+  nodes.out    = ctx.createGain(); nodes.out.gain.value = 1;
+  nodes.comp   = ctx.createDynamicsCompressor();
+  nodes.comp.threshold.value = -16; nodes.comp.knee.value = 14; nodes.comp.ratio.value = 7;
+  nodes.comp.attack.value = 0.003; nodes.comp.release.value = 0.18;
+  nodes.master = ctx.createGain(); nodes.master.gain.value = parseFloat(volEl.value);
+  nodes.an     = ctx.createAnalyser(); nodes.an.fftSize = 2048; nodes.an.smoothingTimeConstant = 0.72;
+
+  nodes.out.connect(nodes.comp);
+  nodes.comp.connect(nodes.master);
+  nodes.master.connect(nodes.an);
+  nodes.an.connect(ctx.destination);
+
+  nodes.drum  = ctx.createGain(); nodes.drum.gain.value  = 0.80; nodes.drum.connect(nodes.out);
+  nodes.synth = ctx.createGain(); nodes.synth.gain.value = 0.62; nodes.synth.connect(nodes.out);
+
+  /* 折弯失真支路（并行；重金属模式增益拉满，对应 WaveShaper 失真吉他） */
+  nodes.shaper = ctx.createWaveShaper();
+  nodes.shaper.curve = driveCurve(7.5); nodes.shaper.oversample = '4x';
+  nodes.drive = ctx.createGain(); nodes.drive.gain.value = 0.12;
+  nodes.synth.connect(nodes.shaper);
+  nodes.shaper.connect(nodes.drive);
+  nodes.drive.connect(nodes.out);
+
+  /* 混响 */
+  nodes.verb     = ctx.createConvolver(); nodes.verb.buffer = impulseBuf(2.6, 2.5);
+  nodes.verbSend = ctx.createGain(); nodes.verbSend.gain.value = 1;
+  nodes.verbRet  = ctx.createGain(); nodes.verbRet.gain.value = 0.45;
+  nodes.verbSend.connect(nodes.verb);
+  nodes.verb.connect(nodes.verbRet);
+  nodes.verbRet.connect(nodes.out);
+
+  /* 延时（带回授 + 阻尼） */
+  nodes.delay = ctx.createDelay(1.2); nodes.delay.delayTime.value = 0.215;
+  nodes.dfb   = ctx.createGain(); nodes.dfb.gain.value = 0.33;
+  nodes.dlp   = ctx.createBiquadFilter(); nodes.dlp.type = 'lowpass'; nodes.dlp.frequency.value = 2400;
+  nodes.dRet  = ctx.createGain(); nodes.dRet.gain.value = 0.5;
+  nodes.delay.connect(nodes.dlp);
+  nodes.dlp.connect(nodes.dfb);
+  nodes.dfb.connect(nodes.delay);
+  nodes.dlp.connect(nodes.dRet);
+  nodes.dRet.connect(nodes.out);
+
+  nodes.arpSendD = ctx.createGain(); nodes.arpSendD.gain.value = 0.34; nodes.arpSendD.connect(nodes.delay);
+  nodes.arpSendV = ctx.createGain(); nodes.arpSendV.gain.value = 0.22; nodes.arpSendV.connect(nodes.verbSend);
+  nodes.padSendV = ctx.createGain(); nodes.padSendV.gain.value = 0.85; nodes.padSendV.connect(nodes.verbSend);
+  nodes.padSendD = ctx.createGain(); nodes.padSendD.gain.value = 0.16; nodes.padSendD.connect(nodes.delay);
+
+  nodes.noise = noiseBuffer(1.0);
+
+  freqArr = new Uint8Array(nodes.an.frequencyBinCount);
+  waveArr = new Uint8Array(nodes.an.fftSize);
+  peaks   = new Float32Array(BARS);
+}
+
+function src(node, t, dur){
+  node._end = t + dur;
+  active.push(node);
+  try{ node.start(t); } catch(e){}
+  try{ node.stop(t + dur); } catch(e){}
+  return node;
+}
+function noiseSrc(t, dur){
+  const s = ctx.createBufferSource();
+  s.buffer = nodes.noise; s.loop = true;
+  return src(s, t, dur);
+}
+function env(g, t, peak, attack, decay){
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001, peak), t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+}
+/* 路由：可选声像 + 可选混响送出；全部汇入 synth 总线（失真并行支路自动生效） */
+function route(g, pan, verb){
+  let node = g;
+  if(pan){
+    const p = ctx.createStereoPanner();
+    p.pan.value = Math.max(-1, Math.min(1, pan));
+    node.connect(p); node = p;
+  }
+  node.connect(nodes.synth);
+  if(verb) node.connect(nodes.verbSend);
+}
+
+/* ── 鼓组 ── */
+function kick(t, v){
+  const o = ctx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(168, t);
+  o.frequency.exponentialRampToValueAtTime(41, t + 0.28);
+  const g = ctx.createGain(); env(g, t, v, 0.006, 0.40);
+  o.connect(g); g.connect(nodes.drum);
+  src(o, t, 0.44);
+  const nz = noiseSrc(t, 0.05);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 1.2;
+  const ng = ctx.createGain(); env(ng, t, 0.40 * v, 0.002, 0.035);
+  nz.connect(bp); bp.connect(ng); ng.connect(nodes.drum);
+}
+function snare(t, v){
+  const nz = noiseSrc(t, 0.24);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1750; bp.Q.value = 0.7;
+  const g = ctx.createGain(); env(g, t, v, 0.002, 0.19);
+  nz.connect(bp); bp.connect(g); g.connect(nodes.drum);
+  const o = ctx.createOscillator(); o.type = 'triangle';
+  o.frequency.setValueAtTime(196, t);
+  o.frequency.exponentialRampToValueAtTime(150, t + 0.11);
+  const g2 = ctx.createGain(); env(g2, t, v * 0.7, 0.002, 0.12);
+  o.connect(g2); g2.connect(nodes.drum);
+  src(o, t, 0.16);
+}
+function hihatC(t, v, open){
+  const d = open ? 0.24 : 0.055;
+  const nz = noiseSrc(t, d + 0.03);
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7800;
+  const g = ctx.createGain(); env(g, t, v, 0.002, d);
+  nz.connect(hp); hp.connect(g); g.connect(nodes.drum);
+}
+function rim(t, v){
+  const nz = noiseSrc(t, 0.05);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.5;
+  const g = ctx.createGain(); env(g, t, v, 0.001, 0.045);
+  nz.connect(bp); bp.connect(g); g.connect(nodes.drum);
+  const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = 430;
+  const g2 = ctx.createGain(); env(g2, t, v * 0.5, 0.001, 0.04);
+  o.connect(g2); g2.connect(nodes.drum);
+  src(o, t, 0.06);
+}
+function tom(t, f, v){
+  const o = ctx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(f * 1.5, t);
+  o.frequency.exponentialRampToValueAtTime(f * 0.6, t + 0.24);
+  const g = ctx.createGain(); env(g, t, v, 0.004, 0.32);
+  o.connect(g); g.connect(nodes.drum);
+  src(o, t, 0.38);
+  const nz = noiseSrc(t, 0.07);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * 1.4; bp.Q.value = 0.9;
+  const ng = ctx.createGain(); env(ng, t, 0.28 * v, 0.002, 0.05);
+  nz.connect(bp); bp.connect(ng); ng.connect(nodes.drum);
+}
+function crash(t, v){
+  const nz = noiseSrc(t, 1.8);
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 5200;
+  const g = ctx.createGain(); env(g, t, v, 0.003, 1.7);
+  nz.connect(hp); hp.connect(g);
+  g.connect(nodes.drum); g.connect(nodes.verbSend);
+}
+
+/* ── 合成器 ── */
+function lead(t, f, v, dur, cut, pan, wave){
+  const w = wave || (METAL ? 'sawtooth' : 'triangle');
+  const o1 = ctx.createOscillator(); o1.type = w; o1.frequency.value = f;
+  const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = f;
+  o2.detune.value = METAL ? -13 : 9;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 6;
+  const hi = Math.min(14000, Math.max(600, (cut || 3000) * 2.4));
+  lp.frequency.setValueAtTime(hi, t);
+  lp.frequency.exponentialRampToValueAtTime(Math.max(200, hi * 0.20), t + Math.max(0.09, dur * 0.85));
+  const g = ctx.createGain(); env(g, t, v, 0.008, Math.max(0.09, dur));
+  o1.connect(lp); o2.connect(lp); lp.connect(g);
+  route(g, pan || 0, false);
+  src(o1, t, dur + 0.12); src(o2, t, dur + 0.12);
+}
+function pulse(t, f, v, dur){                 /* 8-bit 脉冲 */
+  const o = ctx.createOscillator(); o.type = 'square';
+  o.frequency.setValueAtTime(f * 2, t);
+  o.frequency.exponentialRampToValueAtTime(f, t + 0.03);
+  const g = ctx.createGain(); env(g, t, v, 0.002, Math.max(0.05, dur * 0.9));
+  o.connect(g); route(g, 0, false);
+  src(o, t, dur + 0.06);
+}
+function power(t, f, v, dur, cut){
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3;
+  const hi = cut ? Math.min(12000, cut * 1.6) : 3200;
+  lp.frequency.setValueAtTime(hi, t);
+  lp.frequency.exponentialRampToValueAtTime(Math.max(300, hi * 0.28), t + Math.max(0.2, dur * 0.6));
+  const g = ctx.createGain(); env(g, t, v, 0.01, Math.max(0.3, dur));
+  lp.connect(g); route(g, 0, false);
+  for(const m of [1, 1.4983, 2]){
+    for(const det of [-14, 14]){
+      const o = ctx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = f * m; o.detune.value = det;
+      const og = ctx.createGain(); og.gain.value = 0.22;
+      o.connect(og); og.connect(lp);
+      src(o, t, dur + 0.1);
+    }
+  }
+}
+function reese(t, f, v, dur, pan){            /* Reese Bass：双锯齿失谐 → 硬低通 */
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 5;
+  lp.frequency.setValueAtTime(760, t);
+  lp.frequency.exponentialRampToValueAtTime(150, t + Math.min(0.5, Math.max(0.12, dur * 0.7)));
+  const g = ctx.createGain(); env(g, t, v, 0.02, Math.max(0.2, dur));
+  lp.connect(g); route(g, pan || 0.6, true);
+  for(const det of [-19, 19]){
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det;
+    const og = ctx.createGain(); og.gain.value = 0.5;
+    o.connect(og); og.connect(lp);
+    src(o, t, dur + 0.12);
+  }
+}
+function laser(t, f, v){                      /* FM 激光滑音 */
+  const o = ctx.createOscillator(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f * 1.5, t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(60, f * 0.55), t + 0.10);
+  const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = f * 3.02;
+  const g = ctx.createGain(); env(g, t, v, 0.002, 0.11);
+  o.connect(g); o2.connect(g); route(g, 0.12, false);
+  src(o, t, 0.14); src(o2, t, 0.14);
+}
+function arp(t, freqs, v){
+  const sp = 0.072;
+  for(let k = 0; k < freqs.length; k++){
+    const tt = t + k * sp, f = freqs[k];
+    const g = ctx.createGain(); env(g, tt, v, 0.006, sp * 2.3);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 7;
+    lp.frequency.setValueAtTime(Math.min(12000, f * 6), tt);
+    lp.frequency.exponentialRampToValueAtTime(f * 1.7, tt + sp * 2.2);
+    const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = f;
+    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = f; o2.detune.value = 9;
+    o1.connect(lp); o2.connect(lp); lp.connect(g);
+    g.connect(nodes.synth); g.connect(nodes.arpSendD); g.connect(nodes.arpSendV);
+    src(o1, tt, sp * 2.6);
+    src(o2, tt, sp * 2.6);
+  }
+}
+function pad(t, dur, v, minor, f){
+  const fr = [f, f * 1.4983, f * 2, f * 2 * (minor ? 1.1892 : 1.0595)];
+  const D = Math.max(1.2, dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(Math.max(0.001, v), t + 0.8);
+  g.gain.setValueAtTime(Math.max(0.001, v), t + Math.max(0.9, D - 1.0));
+  g.gain.linearRampToValueAtTime(0.0001, t + D);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000; lp.Q.value = 0.6;
+  lp.connect(g);
+  for(let i = 0; i < fr.length; i++){
+    const o = ctx.createOscillator(); o.type = 'sawtooth';
+    o.frequency.value = fr[i]; o.detune.value = (i % 2 ? 5 : -5);
+    const og = ctx.createGain(); og.gain.value = 0.25;
+    o.connect(og); og.connect(lp);
+    src(o, t, D + 0.1);
+  }
+  g.connect(nodes.synth); g.connect(nodes.padSendV); g.connect(nodes.padSendD);
+}
+function bass(t, f, dur, v){
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4;
+  lp.frequency.setValueAtTime(900, t);
+  lp.frequency.exponentialRampToValueAtTime(180, t + Math.min(0.35, Math.max(0.08, dur)));
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001, v), t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.12, dur));
+  o.connect(lp); lp.connect(g); g.connect(nodes.synth);
+  src(o, t, Math.max(0.15, dur) + 0.05);
+}
+function voice(t, f, v){
+  const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+  const b1 = ctx.createBiquadFilter(); b1.type = 'bandpass'; b1.frequency.value = 730;  b1.Q.value = 6;
+  const b2 = ctx.createBiquadFilter(); b2.type = 'bandpass'; b2.frequency.value = 1150; b2.Q.value = 8;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(Math.max(0.001, v), t + 0.06);
+  g.gain.setValueAtTime(Math.max(0.001, v), t + 0.45);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+  o.connect(b1); b1.connect(g); o.connect(b2); b2.connect(g);
+  g.connect(nodes.synth); g.connect(nodes.verbSend);
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.2;
+  const lg = ctx.createGain(); lg.gain.value = 6;
+  lfo.connect(lg); lg.connect(o.detune);
+  src(lfo, t, 0.85); src(o, t, 0.85);
+}
+function riser(t, dur, v){
+  const d = Math.max(0.3, dur);
+  const nz = noiseSrc(t, d + 0.1);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 5;
+  bp.frequency.setValueAtTime(400, t);
+  bp.frequency.exponentialRampToValueAtTime(6500, t + d);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(Math.max(0.001, v), t + d * 0.85);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.08);
+  nz.connect(bp); bp.connect(g);
+  g.connect(nodes.synth); g.connect(nodes.padSendV);
+}
+function sweep(t, dur, v){
+  const d = Math.max(0.3, dur);
+  const nz = noiseSrc(t, d + 0.1);
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass';
+  hp.frequency.setValueAtTime(9000, t);
+  hp.frequency.exponentialRampToValueAtTime(700, t + d);
+  const g = ctx.createGain(); env(g, t, v, 0.01, d);
+  nz.connect(hp); hp.connect(g);
+  g.connect(nodes.synth); g.connect(nodes.verbSend);
+}
+function tapestop(t, v){                       /* 磁带急停：频率急降 + 静音 */
+  const o = ctx.createOscillator(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(880, t);
+  o.frequency.exponentialRampToValueAtTime(34, t + 0.45);
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(6000, t);
+  lp.frequency.exponentialRampToValueAtTime(280, t + 0.45);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(Math.max(0.001, v), t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+  o.connect(lp); lp.connect(g); route(g, 0, true);
+  src(o, t, 0.55);
+  const nz = noiseSrc(t, 0.35);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2;
+  bp.frequency.setValueAtTime(3000, t);
+  bp.frequency.exponentialRampToValueAtTime(200, t + 0.35);
+  const ng = ctx.createGain(); env(ng, t, v * 0.4, 0.002, 0.33);
+  nz.connect(bp); bp.connect(ng); ng.connect(nodes.out);
+}
+function egg(t, f, v){                         /* 1024 彩蛋：八度爬音过载 */
+  const sp = 0.058;
+  for(let k = 0; k < 8; k++){
+    const tt = t + k * sp;
+    const o = ctx.createOscillator(); o.type = 'square';
+    o.frequency.value = f * Math.pow(2, k / 2);
+    const g = ctx.createGain(); env(g, tt, v * (0.95 - k * 0.07), 0.004, sp * 2.6);
+    o.connect(g); route(g, 0, true);
+    src(o, tt, sp * 3);
+  }
+}
+
+/* ── 分派器：note → 音色 ── */
+function fire(n){
+  const v = (n.vol == null) ? 0.35 : n.vol;
+  const f = n.freq;
+  switch(n.inst){
+    case 'kick':      kick(n.t, v); break;
+    case 'snare':     snare(n.t, v); break;
+    case 'hihatC':    hihatC(n.t, v, false); break;
+    case 'rim':       rim(n.t, v); break;
+    case 'tom':       tom(n.t, f || 150, v); break;
+    case 'crash':     crash(n.t, v); break;
+    case 'lead':      lead(n.t, f || 220, v, n.dur, n.cut, n.pan, n.wave); break;
+    case 'pulse':     pulse(n.t, f || 440, v, n.dur); break;
+    case 'power':     power(n.t, f || 110, v, n.dur, n.cut); break;
+    case 'reese':     reese(n.t, f || 60, v, n.dur, n.pan); break;
+    case 'laser':     laser(n.t, f || 500, v); break;
+    case 'arpUp':     arp(n.t, n.freqs || [], v); break;
+    case 'pad':       pad(n.t, n.dur, v, n.minor !== false, f || 110); break;
+    case 'bass':      bass(n.t, f || 82, n.dur, v); break;
+    case 'voice':     voice(n.t, f || 220, v); break;
+    case 'riser':     riser(n.t, n.dur, v); break;
+    case 'sweep':     sweep(n.t, n.dur, v); break;
+    case 'tapestop':  tapestop(n.t, v); break;
+    case 'egg':       egg(n.t, f || 330, v); break;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Layer 4 · 调度器 Scheduler + 可视化 Viz + 交互 UI
+   ══════════════════════════════════════════════════════════════════ */
+const KIND_NAME = {
+  'lower': '[小写字母 → 五声音阶单音]', 'upper': '[大写字母 → 失真强力和弦]',
+  'digit': '[数字 → 8-bit 脉冲]', 'brace-open': '[左花括号 → 808 底鼓]',
+  'brace-close': '[右花括号 → 军鼓 + 落地镲]', 'hihat': '[分号/逗号 → 闭镲]',
+  'rim': '[括号 → 边缘击打]', 'op': '[运算符 → FM 激光滑音]',
+  'cmp': '[比较符 → 上升扫频 RISER]', 'logic': '[逻辑符 → 张力和弦]',
+  'if': '[IF 分支 → 三角波主音 · 左声道]', 'else': '[ELSE 分支 → Reese 低音 · 右声道]',
+  'loop': '[FOR/WHILE → 循环块重复 ×2 · 提速 5%]', 'ret': '[RETURN/BREAK → 磁带急停 + 空拍]',
+  'def': '[DEF/CLASS → 换段落 + 镲片]', 'str': '[字符串 → 人声式合成 VOICE]',
+  'io': '[IO → 人声式合成 VOICE]', 'mem': '[NEW/DEL → 上升器 RISER]',
+  'imp': '[IMPORT/INCLUDE → 开场扫频 SWEEP]', 'type': '[类型关键字 → 闷通鼓 TOM]',
+  'try': '[TRY/THROW → 张力和弦]', 'comment': '[注释 → 氛围铺底 PAD]',
+  'rest': '[空白 → 休止符 / 切分]', 'egg': '[1024 → 八度爬音彩蛋]'
+};
+const KIND_LEGEND = {
+  'lower': 'lower', 'upper': 'upper', 'digit': 'digit', 'brace-open': 'brace', 'brace-close': 'brace',
+  'hihat': 'semi', 'rim': 'paren', 'op': 'op', 'cmp': 'op', 'logic': 'upper', 'if': 'if', 'else': 'else',
+  'loop': 'loop', 'ret': 'ret', 'def': 'def', 'str': 'str', 'io': 'str', 'mem': 'op', 'imp': 'def',
+  'type': 'type', 'try': 'type', 'comment': 'comment', 'rest': 'space', 'egg': 'egg'
+};
+
+let sched = null, previewSched = null;
+let playing = false, startTime = 0, lastStep = -1, rafId = 0, eggPtr = 0;
+let lastLegend = null, stopToken = 0, previewTimer = 0, resizeTimer = 0;
+let parts = [], lastDraw = 0, vinylAng = 0;
+
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect();
+  const w = Math.max(1, Math.round(r.width * DPR));
+  const h = Math.max(1, Math.round(r.height * DPR));
+  if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+}
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.classList.remove('show'), 2600);
+}
+function lightLegend(k){
+  if(lastLegend !== null){
+    const p = legendEl.querySelector('.lrow[data-k="' + lastLegend + '"]');
+    if(p) p.classList.remove('on');
+  }
+  lastLegend = k;
+  if(k){
+    const c = legendEl.querySelector('.lrow[data-k="' + k + '"]');
+    if(c) c.classList.add('on');
+  }
+}
+function updateHud(m){
+  if(!m || m.line < 0) return;
+  hudText.textContent = 'L' + (m.line + 1) + ' · ' + (KIND_NAME[m.kind] || '…');
+}
+
+/* ── 示波器 ── */
+function drawScope(){
+  const W = scopeEl.width / DPR, H = scopeEl.height / DPR;
+  scopeCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  scopeCtx.clearRect(0, 0, W, H);
+
+  scopeCtx.strokeStyle = 'rgba(255,255,255,.07)';
+  scopeCtx.lineWidth = 1;
+  for(let i = 1; i < 8; i++){
+    const x = (i / 8) * W;
+    scopeCtx.beginPath(); scopeCtx.moveTo(x, 0); scopeCtx.lineTo(x, H); scopeCtx.stroke();
+  }
+  for(let i = 1; i < 4; i++){
+    const y = (i / 4) * H;
+    scopeCtx.beginPath(); scopeCtx.moveTo(0, y); scopeCtx.lineTo(W, y); scopeCtx.stroke();
+  }
+
+  const live = !!(ctx && nodes && waveArr);
+  let data = null;
+  if(live){ nodes.an.getByteTimeDomainData(waveArr); data = waveArr; }
+  const N = data ? data.length : 240;
+
+  scopeCtx.beginPath();
+  for(let i = 0; i < N; i++){
+    let v;
+    if(data) v = (data[i] - 128) / 128;
+    else v = Math.sin(i * 0.13 + performance.now() / 700) * 0.06;
+    const x = (i / (N - 1)) * W;
+    const y = H / 2 - v * (H * 0.42);
+    if(i === 0) scopeCtx.moveTo(x, y); else scopeCtx.lineTo(x, y);
+  }
+  scopeCtx.strokeStyle = 'rgba(182,255,0,.92)';
+  scopeCtx.lineWidth = 1.6;
+  scopeCtx.shadowColor = 'rgba(182,255,0,.8)';
+  scopeCtx.shadowBlur = 10;
+  scopeCtx.stroke();
+  scopeCtx.shadowBlur = 0;
+}
+
+/* ── 频谱 + 黑胶 + 彩蛋粒子 ── */
+function burst(){
+  const W = vizEl.width / DPR, H = vizEl.height / DPR;
+  for(let i = 0; i < 96; i++){
+    const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 240;
+    parts.push({ x: W * 0.5, y: H * 0.5, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 70,
+                 life: 1, size: 1.5 + Math.random() * 2.8 });
+  }
+  eggEl.classList.add('on');
+  clearTimeout(burst._t);
+  burst._t = setTimeout(() => eggEl.classList.remove('on'), 340);
+  toast('★ 1024 彩蛋触发 · 八度爬音过载 ★');
+}
+
+function drawViz(){
+  const W = vizEl.width / DPR, H = vizEl.height / DPR;
+  vizCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  vizCtx.clearRect(0, 0, W, H);
+  if(!peaks) peaks = new Float32Array(BARS);
+
+  const now = performance.now();
+  const dt = Math.min(0.06, (now - lastDraw) / 1000 || 0.016);
+  lastDraw = now;
+
+  /* ── 左：FFT 频谱柱 ── */
+  const barArea = W * 0.66;
+  const live = !!(ctx && nodes && freqArr);
+  if(live) nodes.an.getByteFrequencyData(freqArr);
+  const N = live ? freqArr.length : 0;
+  const bw = barArea / BARS;
+  let low = 0;
+
+  for(let i = 0; i < BARS; i++){
+    let v;
+    if(live){
+      const lo = Math.floor(Math.pow(i / BARS, 2.1) * N * 0.72);
+      const hi = Math.max(lo + 1, Math.floor(Math.pow((i + 1) / BARS, 2.1) * N * 0.72));
+      let m = 0;
+      for(let j = lo; j < hi && j < N; j++) if(freqArr[j] > m) m = freqArr[j];
+      v = m / 255;
+    } else {
+      v = 0.05 + 0.045 * (1 + Math.sin(now / 640 + i * 0.33));
+    }
+    if(i < 8) low += v;
+
+    peaks[i] = Math.max(peaks[i] * 0.93, v);
+    const x = i * bw;
+    const bh = Math.max(1.5, v * (H - 18));
+    const grd = vizCtx.createLinearGradient(0, H, 0, H - bh);
+    grd.addColorStop(0, 'rgba(0,229,255,.95)');
+    grd.addColorStop(0.55, 'rgba(124,107,255,.9)');
+    grd.addColorStop(1, 'rgba(255,45,149,.95)');
+    vizCtx.fillStyle = grd;
+    vizCtx.shadowColor = 'rgba(0,229,255,.55)';
+    vizCtx.shadowBlur = 12;
+    vizCtx.fillRect(x + bw * 0.18, H - bh, bw * 0.64, bh);
+    vizCtx.shadowBlur = 0;
+    vizCtx.fillStyle = 'rgba(255,255,255,.7)';
+    vizCtx.fillRect(x + bw * 0.18, H - 2 - peaks[i] * (H - 18), bw * 0.64, 2);
+  }
+  low /= 8;
+
+  /* ── 右：旋转黑胶 ── */
+  const cx = W * 0.845, cy = H * 0.5;
+  const r = Math.min(H * 0.42, W * 0.15);
+  vinylAng += dt * (playing ? 2.6 : 0.5);
+  vizCtx.save();
+  vizCtx.translate(cx, cy);
+  const disc = vizCtx.createRadialGradient(0, 0, r * 0.1, 0, 0, r);
+  disc.addColorStop(0, 'rgba(32,20,40,.95)');
+  disc.addColorStop(0.6, 'rgba(14,10,20,.98)');
+  disc.addColorStop(1, 'rgba(38,26,52,.95)');
+  vizCtx.fillStyle = disc;
+  vizCtx.beginPath(); vizCtx.arc(0, 0, r, 0, Math.PI * 2); vizCtx.fill();
+  vizCtx.strokeStyle = 'rgba(255,255,255,.10)';
+  vizCtx.lineWidth = 1;
+  vizCtx.beginPath(); vizCtx.arc(0, 0, r, 0, Math.PI * 2); vizCtx.stroke();
+  vizCtx.rotate(vinylAng);
+  vizCtx.strokeStyle = 'rgba(255,255,255,.055)';
+  for(let i = 1; i <= 6; i++){
+    vizCtx.beginPath(); vizCtx.arc(0, 0, r * (0.34 + i * 0.1), 0, Math.PI * 2); vizCtx.stroke();
+  }
+  vizCtx.fillStyle = METAL ? 'rgba(255,45,149,.85)' : 'rgba(0,229,255,.85)';
+  vizCtx.beginPath(); vizCtx.arc(0, 0, r * 0.30, 0, Math.PI * 2); vizCtx.fill();
+  vizCtx.strokeStyle = 'rgba(255,255,255,.55)';
+  vizCtx.lineWidth = 2;
+  vizCtx.beginPath(); vizCtx.arc(0, 0, r * 0.30, 0, Math.PI * 2); vizCtx.stroke();
+  vizCtx.fillStyle = 'rgba(6,8,14,.95)';
+  vizCtx.beginPath(); vizCtx.arc(0, 0, r * 0.07, 0, Math.PI * 2); vizCtx.fill();
+  vizCtx.restore();
+
+  /* ── 彩蛋金色粒子 ── */
+  if(parts.length){
+    vizCtx.globalCompositeOperation = 'lighter';
+    for(let i = parts.length - 1; i >= 0; i--){
+      const p = parts[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 190 * dt; p.life -= dt * 0.72;
+      if(p.life <= 0){ parts.splice(i, 1); continue; }
+      vizCtx.globalAlpha = Math.max(0, p.life);
+      vizCtx.fillStyle = 'rgba(255,214,64,.95)';
+      vizCtx.shadowColor = 'rgba(255,180,0,.95)';
+      vizCtx.shadowBlur = 14;
+      vizCtx.beginPath(); vizCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); vizCtx.fill();
+    }
+    vizCtx.globalAlpha = 1; vizCtx.shadowBlur = 0;
+    vizCtx.globalCompositeOperation = 'source-over';
+  }
+
+  /* 低频驱动的径向辉光 */
+  const g = vizCtx.createRadialGradient(W * 0.5, H * 1.02, 0, W * 0.5, H * 1.02, W * 0.78);
+  g.addColorStop(0, 'rgba(0,229,255,' + (0.05 + 0.16 * low).toFixed(3) + ')');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  vizCtx.globalCompositeOperation = 'lighter';
+  vizCtx.fillStyle = g;
+  vizCtx.fillRect(0, 0, W, H);
+  vizCtx.globalCompositeOperation = 'source-over';
+}
+
+/* ── 结构时间轴 ── */
+function drawStruct(frac){
+  const W = structEl.width / DPR, H = structEl.height / DPR;
+  structCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  structCtx.clearRect(0, 0, W, H);
+
+  const s = sched || previewSched;
+  if(!s){
+    structCtx.fillStyle = 'rgba(120,134,160,.55)';
+    structCtx.font = '11px "Share Tech Mono", monospace';
+    structCtx.fillText('粘贴代码 → 这里显示段落 / 根音 / 嵌套深度曲线', 10, H / 2 + 4);
+    return;
+  }
+
+  const D = Math.max(0.001, s.duration), x0 = 6, x1 = W - 6, w = Math.max(1, x1 - x0);
+  const baseY = H - 12, topY = 6;
+
+  for(const b of s.secBounds){
+    const col = HUE[((b.idx % HUE.length) + HUE.length) % HUE.length];
+    const a = x0 + (b.t0 / D) * w, c = x0 + (Math.max(b.t1, b.t0 + 0.02) / D) * w;
+    const rgba = al => 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + al + ')';
+    structCtx.fillStyle = rgba(0.13);
+    structCtx.fillRect(a, topY, Math.max(1, c - a), baseY - topY);
+    structCtx.fillStyle = rgba(0.75);
+    structCtx.fillRect(a, topY, Math.max(1, c - a), 2);
+    if(c - a > 24){
+      structCtx.fillStyle = rgba(0.95);
+      structCtx.font = '9px "Share Tech Mono", monospace';
+      structCtx.fillText('§' + (b.idx + 1), a + 4, topY + 12);
+      structCtx.fillStyle = 'rgba(216,226,240,.7)';
+      structCtx.fillText(pentaName(b.root), a + 4, baseY - 3);
+    }
+  }
+
+  structCtx.beginPath();
+  for(let i = 0; i < s.total; i++){
+    const x = x0 + s.curveT[i] * w;
+    const y = baseY - s.curveD[i] * (baseY - topY - 6);
+    if(i === 0) structCtx.moveTo(x, y); else structCtx.lineTo(x, y);
+  }
+  structCtx.strokeStyle = 'rgba(150,135,255,.9)';
+  structCtx.lineWidth = 1.4;
+  structCtx.shadowColor = 'rgba(124,107,255,.85)';
+  structCtx.shadowBlur = 8;
+  structCtx.stroke();
+  structCtx.shadowBlur = 0;
+
+  if(frac >= 0){
+    const px = x0 + Math.min(1, Math.max(0, frac)) * w;
+    structCtx.fillStyle = 'rgba(255,255,255,.92)';
+    structCtx.shadowColor = 'rgba(0,229,255,.95)';
+    structCtx.shadowBlur = 12;
+    structCtx.fillRect(px - 1, 0, 2, H - 6);
+    structCtx.shadowBlur = 0;
+  }
+}
+
+/* ── 编曲预览（不发声，驱动状态栏 / 时间轴） ── */
+function applyLang(){
+  currentLang = detectLang(codeEl.value);
+  langPill.textContent = LANG_NAME[currentLang] || 'C / C++';
+  renderCode();
+}
+function refreshStats(){
+  const bpm = parseInt(bpmEl.value, 10) || 128;
+  const s = compose(codeEl.value, currentLang, bpm);
+  previewSched = s;
+  const lines = codeEl.value.split('\n').length;
+  if(s){
+    statPill.textContent = lines + ' 行 · ' + s.total + ' 步';
+    durPill.textContent  = '时长 ' + s.duration.toFixed(1) + 's · ' + bpm + ' BPM';
+    secPill.textContent  = s.secBounds.length + ' 段落';
+    mixPill.textContent  = s.notes.length + ' 音符 · 5 轨';
+  } else {
+    statPill.textContent = lines + ' 行 · 0 步';
+    durPill.textContent  = '时长 0.0s · ' + bpm + ' BPM';
+    secPill.textContent  = '0 段落';
+    mixPill.textContent  = '—';
+  }
+  if(!playing) drawStruct(-1);
+}
+function preview(){
+  applyLang();
+  syncScroll();
+  refreshStats();
+}
+
+/* ── 时间 → 步进（二分） ── */
+function stepAt(rel){
+  const T = sched.times, n = T.length;
+  let lo = 0, hi = n - 1, ans = -1;
+  while(lo <= hi){
+    const mid = (lo + hi) >> 1;
+    if(T[mid] <= rel){ ans = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  return ans;
+}
+
+/* ── 播放 / 停止 ── */
+function play(){
+  if(playing) return;
+  currentLang = detectLang(codeEl.value);
+  const bpm = parseInt(bpmEl.value, 10) || 128;
+  const s = compose(codeEl.value, currentLang, bpm);
+  if(!s){ toast('代码太短了，先粘一段代码进来'); return; }
+
+  initAudio();
+  if(ctx.state === 'suspended') ctx.resume();
+
+  stopToken++;
+  sched = s; previewSched = s;
+  const base = ctx.currentTime + 0.14;
+  const off = base - 0.12;                 /* sched.t 从 0.12 起算 */
+  for(const n of s.notes) n.t += off;
+
+  active = [];                              /* 丢掉上一轮残留节点引用 */
+  for(const n of s.notes) fire(n);          /* 全曲一次性排程，采样级精准 */
+
+  startTime = base;
+  lastStep = -1; eggPtr = 0;
+  parts = [];
+  playing = true;
+  cancelAnimationFrame(rafId);
+
+  nodes.master.gain.value = parseFloat(volEl.value);
+  nodes.drive.gain.value  = METAL ? 0.9 : 0.12;
+  nodes.out.gain.cancelScheduledValues(ctx.currentTime);
+  nodes.out.gain.value = 1;
+
+  btnPlay.disabled = true; btnStop.disabled = false;
+  hudBadge.textContent = 'PLAY';
+  hudBadge.style.color = METAL ? '#ff2d95' : '#00e5ff';
+  progEl.style.width = '0%';
+  toast('编译完成：' + s.total + ' 步 · ' + s.notes.length + ' 音符 · ' + s.duration.toFixed(1) + 's');
+  tick();
+}
+
+function tick(){
+  if(!playing) return;
+  const rel = ctx.currentTime - startTime;
+  const s = sched;
+  if(rel >= s.duration){ finish(); return; }
+
+  progEl.style.width = (Math.min(1, rel / s.duration) * 100).toFixed(2) + '%';
+
+  const idx = stepAt(rel);
+  if(idx !== lastStep && idx >= 0){
+    lastStep = idx;
+    const m = s.meta[idx];
+    setActiveLine(m.line);
+    ensureVisible(m.line);
+    showCursor(m.line, m.col, m.len);
+    updateHud(m);
+    lightLegend(KIND_LEGEND[m.kind] || null);
+    depthPill.textContent = '深度 ' + m.depth + ' · 强度 ' + Math.round(m.inten * 100) + '%';
+    secPill.textContent = (m.section + 1) + ' / ' + s.secBounds.length + ' 段落';
+  }
+  while(eggPtr < s.eggTimes.length && rel >= s.eggTimes[eggPtr]){ burst(); eggPtr++; }
+
+  drawScope();
+  drawViz();
+  drawStruct(rel / s.duration);
+
+  if(active.length > 900) active = active.filter(n => n._end > ctx.currentTime - 0.5);
+  rafId = requestAnimationFrame(tick);
+}
+
+function finish(){
+  playing = false;
+  cancelAnimationFrame(rafId); rafId = 0;
+  btnPlay.disabled = false; btnStop.disabled = true;
+  hudBadge.textContent = 'DONE'; hudBadge.style.color = '#b6ff00';
+  hudText.textContent = '编译完成 · ' + sched.total + ' 步 / ' + sched.notes.length + ' 音符';
+  progEl.style.width = '100%';
+  setTimeout(() => { if(!playing) progEl.style.width = '0%'; }, 700);
+  clearActive(); hideCursor(); lightLegend(null); lastStep = -1;
+  drawStruct(-1);
+}
+
+function stop(){
+  const wasPlaying = playing;
+  playing = false;
+  cancelAnimationFrame(rafId); rafId = 0;
+
+  if(ctx && nodes && wasPlaying){
+    const t = ctx.currentTime;
+    nodes.out.gain.cancelScheduledValues(t);
+    nodes.out.gain.setValueAtTime(nodes.out.gain.value, t);
+    nodes.out.gain.linearRampToValueAtTime(0.0001, t + 0.07);
+    const my = ++stopToken;
+    setTimeout(() => {
+      if(my !== stopToken) return;
+      for(const n of active){ try{ n.stop(); } catch(e){} try{ n.disconnect(); } catch(e){} }
+      active = [];
+      if(nodes) nodes.out.gain.value = 1;
+    }, 130);
+  } else {
+    for(const n of active){ try{ n.stop(); } catch(e){} }
+    active = [];
+  }
+
+  btnPlay.disabled = false; btnStop.disabled = true;
+  hudBadge.textContent = 'IDLE'; hudBadge.style.color = '#9fb0cc';
+  hudText.textContent = '等待编译…';
+  progEl.style.width = '0%';
+  clearActive(); hideCursor(); lightLegend(null); lastStep = -1; eggPtr = 0;
+  depthPill.textContent = '深度 0 · 强度 0%';
+  if(previewSched) secPill.textContent = previewSched.secBounds.length + ' 段落';
+  drawStruct(-1);
+}
+
+function idleLoop(){
+  if(!playing){ drawScope(); drawViz(); }
+  requestAnimationFrame(idleLoop);
+}
+
+/* ── 交互绑定 ── */
+codeEl.addEventListener('input', () => {
+  currentLang = detectLang(codeEl.value);
+  langPill.textContent = LANG_NAME[currentLang] || 'C / C++';
+  renderCode();
+  syncScroll();
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(refreshStats, 160);
+});
+codeEl.addEventListener('scroll', syncScroll);
+
+bpmEl.addEventListener('input', () => {
+  bpmOut.textContent = bpmEl.value;
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(refreshStats, 180);
+  if(playing) toast('BPM 将在下次播放时生效：' + bpmEl.value);
+});
+volEl.addEventListener('input', () => {
+  const v = parseFloat(volEl.value);
+  volOut.textContent = Math.round(v * 100) + '%';
+  if(nodes) nodes.master.gain.value = v;
+});
+
+segEl.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-s]');
+  if(!btn) return;
+  METAL = (btn.dataset.s === 'metal');
+  for(const b of segEl.querySelectorAll('button')) b.classList.toggle('on', b === btn);
+  if(nodes) nodes.drive.gain.value = METAL ? 0.9 : 0.12;
+  toast(METAL ? '曲风切换 → 重金属 · 折弯失真 + 双踩底鼓 + 强力和弦'
+              : '曲风切换 → 赛博电音 · 正弦/三角波 + 滤波扫频');
+  refreshStats();
+  if(playing) cursorEl.classList.toggle('metal', METAL);
+});
+
+function loadPreset(i){
+  stop();
+  codeEl.value = PRESETS[i].code;
+  codeEl.scrollTop = 0;
+  preview();
+  toast('已载入预设：' + PRESETS[i].name);
+}
+btnP1.addEventListener('click', () => loadPreset(0));
+btnP2.addEventListener('click', () => loadPreset(1));
+btnP3.addEventListener('click', () => loadPreset(2));
+btnP4.addEventListener('click', () => loadPreset(3));
+
+btnPlay.addEventListener('click', play);
+btnStop.addEventListener('click', stop);
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); play(); }
+});
+
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    fitCanvas(vizEl); fitCanvas(scopeEl); fitCanvas(structEl);
+    measureChar();
+    if(!playing) drawStruct(-1);
+  }, 150);
+});
+
+/* ── 启动 ── */
+(function boot(){
+  codeEl.value = PRESETS[0].code;
+  bpmOut.textContent = bpmEl.value;
+  volOut.textContent = Math.round(parseFloat(volEl.value) * 100) + '%';
+  fitCanvas(vizEl); fitCanvas(scopeEl); fitCanvas(structEl);
+  measureChar();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(measureChar);
+  preview();
+  idleLoop();
+  toast('粘贴 C / C++ / Python 代码 → 点「编译演奏」· 逐字符扫描成五声音阶电音');
+})();
+</script>
+</body>
+</html>
